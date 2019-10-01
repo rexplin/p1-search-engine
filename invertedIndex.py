@@ -1,9 +1,9 @@
 from collections import OrderedDict
 from fullStopWordList import stopwords as stop_words
+from multiprocessing import Pool
 from nltk.stem.snowball import EnglishStemmer
 import json
 # import pickle
-# import re
 import nltk
 import simplejson
 import sys
@@ -45,11 +45,15 @@ class Index:
         :param document: Document to be processed and added to the index
         :return: None
         """
-        processed_tokens = [self.stemmer.stem(token.lower()) for token in self.tokenizer(document["content"])
-                            if token not in stop_words and token.isalpha()]
-        # remove all grammar i.e. periods
-        # clean_text = re.sub(r'[^\w\s]', '', document['content'])
-        for token in processed_tokens:
+        self.__unique_id = 1
+        tokens = self.tokenizer(document["content"])
+        filtered = [token for token in tokens if token not in self.stopwords]
+        processed_tokens = [self.stemmer.stem(token.lower()) for token in filtered if token.isalpha()]
+
+        # Process one more time for stop words after lemmatizing cause we might still have things like 'a' leftover
+        final_tokens = [token for token in processed_tokens if token not in self.stopwords]
+
+        for token in final_tokens:
             # add the document id followed by the line location into the dictionary/list
             doc_id = document["id"]
             pos = self.__unique_id
@@ -64,6 +68,8 @@ class Index:
 #                self.index[token].append(self.__unique_id)         # too much time and space for large collections
 #           self.documents[self.__unique_id] = document
             self.__unique_id += 1
+
+        return self.index
 
     def order_index(self):
         """
@@ -88,23 +94,33 @@ class Index:
         with open(filename, "w") as dump_file:
             dump_file.write(simplejson.dumps(self.index, indent=4))
 
+    def merge(self, partial):
+        """
+        Merges a partial index into the full index
+
+        :param partial: Partial index
+        :return: None
+        """
+        self.index.update(partial)
+
 
 if __name__ == "__main__":
+    pool = Pool()
     index = Index(nltk.word_tokenize)
     # counting var for testing purposes
     i = 0
-
     # open json wiki file in read only
     with open("test_data.json", "r") as myfile:
+    # with open("wikipedia_text_files.json", "r") as myfile:
         # load wiki file in a list format
         data = json.load(myfile)
 
-    # for loop to add whole document to index
-    for documents in data:
-        index.add(documents)
+    result = pool.imap(index.add, data)
+
+    for partial in result:
+        index.merge(partial)
         sys.stdout.write(f"Progress: {i}    \r")
         sys.stdout.flush()
-        # number of documents added counter for testing only
         i += 1
 
-    index.dump("index_dump.json")
+    index.dump("multi_process.json")
