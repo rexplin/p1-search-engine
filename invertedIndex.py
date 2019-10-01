@@ -45,8 +45,11 @@ class Index:
         :param document: Document to be processed and added to the index
         :return: None
         """
-        processed_tokens = [self.stemmer.stem(token.lower()) for token in self.tokenizer(document["content"])
-                            if token not in stop_words and token.isalpha()]
+        self.__unique_id = 1
+        processed_tokens = [char for char in
+                            [self.stemmer.stem(token.lower()) for token in (self.tokenizer(document["content"]))
+                             if token.lower() not in stop_words and token.isalpha()]
+                            if char not in stop_words and char.isalpha()]
         # remove all grammar i.e. periods
         # clean_text = re.sub(r'[^\w\s]', '', document['content'])
         for token in processed_tokens:
@@ -98,7 +101,9 @@ if __name__ == "__main__":
     with open("test_data.json", "r") as myfile:
         # load wiki file in a list format
         data = json.load(myfile)
-
+#index.add(data[0])
+#index.add(data[1])
+#print(index.stopwords)
     # for loop to add whole document to index
     for documents in data:
         index.add(documents)
