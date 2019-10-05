@@ -2,11 +2,8 @@ from collections import OrderedDict
 from fullStopWordList import stopwords as stop_words
 from nltk.stem.snowball import EnglishStemmer
 import json
-# import pickle
-# import re
 import nltk
 import simplejson
-import sys
 
 
 class Index:
@@ -49,9 +46,7 @@ class Index:
         processed_tokens = [char for char in
                             [self.stemmer.stem(token.lower()) for token in (self.tokenizer(document["content"]))
                              if token.lower() not in stop_words and token.isalpha()]
-                            if char not in stop_words and char.isalpha()]
-        # remove all grammar i.e. periods
-        # clean_text = re.sub(r'[^\w\s]', '', document['content'])
+                            if char not in stop_words]
         for token in processed_tokens:
             # add the document id followed by the line location into the dictionary/list
             doc_id = document["id"]
@@ -59,13 +54,7 @@ class Index:
             if token not in self.index:
                 self.index.update({token: [f"{doc_id}:{pos}"]})
             else:
-                if f"{doc_id}:{pos}" not in self.index[token]:
-                    self.index[token].append(f"{doc_id}:{pos}")
-
-#            else:
-#                self.index[token].append(document['id'])           # adds the indevidual document to each word,
-#                self.index[token].append(self.__unique_id)         # too much time and space for large collections
-#           self.documents[self.__unique_id] = document
+                self.index[token].append(f"{doc_id}:{pos}")
             self.__unique_id += 1
 
     def order_index(self):
@@ -98,17 +87,13 @@ if __name__ == "__main__":
     i = 0
 
     # open json wiki file in read only
-    with open("test_data.json", "r") as myfile:
+    with open("wikipedia_text_files.json", "r") as myfile:
         # load wiki file in a list format
         data = json.load(myfile)
-#index.add(data[0])
-#index.add(data[1])
-#print(index.stopwords)
     # for loop to add whole document to index
     for documents in data:
         index.add(documents)
-        sys.stdout.write(f"Progress: {i}    \r")
-        sys.stdout.flush()
+        print(i)
         # number of documents added counter for testing only
         i += 1
 
