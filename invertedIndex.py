@@ -13,28 +13,28 @@ def sort_coo(coo_matrix):
     return sorted(tuples, key=lambda x: (x[1], x[0]), reverse=True)
 
 
-def extract_topn_from_vector(feature_names, sorted_items, topn=10):
-    """get the feature names and tf-idf score of top n items"""
+# def extract_topn_from_vector(feature_names, sorted_items, topn=10):
+#    """get the feature names and tf-idf score of top n items"""
 
     # use only topn items from vector
-    sorted_items = sorted_items[:topn]
+#     sorted_items = sorted_items[:topn]
 
-    score_vals = []
-    feature_vals = []
+#     score_vals = []
+#     feature_vals = []
 
     # word index and corresponding tf-idf score
-    for idx, score in sorted_items:
-        # keep track of feature name and its corresponding score
-        score_vals.append(round(score, 3))
-        feature_vals.append(feature_names[idx])
+#     for idx, score in sorted_items:
+#         # keep track of feature name and its corresponding score
+#         score_vals.append(round(score, 3))
+#         feature_vals.append(feature_names[idx])
 
     # create a tuples of feature,score
     # results = zip(feature_vals,score_vals)
-    results = {}
-    for idx in range(len(feature_vals)):
-        results[feature_vals[idx]] = score_vals[idx]
+#     results = {}
+#     for idx in range(len(feature_vals)):
+#         results[feature_vals[idx]] = score_vals[idx]
 
-    return results
+#     return results
 
 
 def index_worker(queue, index_queue, pp_docs_queue):
@@ -57,7 +57,7 @@ def do_work(document, index_queue, pp_docs_queue):
     unique_id = 1
     doc_id = document["id"]
     stemmer = nltk.stem.snowball.EnglishStemmer()
-#     tokens = nltk.word_tokenize(f"{document['title']} {document['content']}")
+    tokens = nltk.word_tokenize(f"{document['title']} {document['content']}")
     filtered = [token.lower() for token in tokens if token not in stop_words]
     processed_tokens = [stemmer.stem(token) for token in filtered if token.isalpha()]
 
