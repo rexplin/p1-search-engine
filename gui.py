@@ -15,6 +15,7 @@ def on_space(event):
     value = value.strip().lower()
 
     # get data from test_list
+    count = 0
     if value == '':
         data = ""
     else:
@@ -24,6 +25,9 @@ def on_space(event):
         for item in querylog_data:
             if value in item.lower():
                 data.append(item)
+                count += 1
+                if count >= 10: # can use to decide how many results to show
+                    break
 
     # update data in listbox
     listbox_update(data)
