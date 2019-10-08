@@ -29,6 +29,18 @@ def on_space(event):
     listbox_update(data)
 
 
+def on_return(event):
+    """
+    Can be modified to sent our query into our search
+    currently just prints whatever is in the entry box
+    :param event: Enter is pressed
+    :return: None
+    """
+    # get text from entry
+    result = event.widget.get()
+    print(result)
+
+
 def listbox_update(data):
     # delete previous data
     listbox.delete(0, 'end')
@@ -42,10 +54,16 @@ def listbox_update(data):
 
 
 def on_select(event):
-    # display element selected on list
-    print('(event) previous:', event.widget.get('active'))
-    print('(event)  current:', event.widget.get(event.widget.curselection()))
-    print('---')
+    """
+    Gets the suggestion that was clicked an populates the entry box with it
+    :param event:
+    :return:
+    """
+    result = event.widget.get(event.widget.curselection())
+    entry.delete(0, 'end')
+    entry.insert(0, result)
+
+    entry.focus_set()
 
 
 if __name__ == "__main__":
@@ -57,6 +75,7 @@ if __name__ == "__main__":
     entry.pack()
 
     entry.bind('<space>', on_space)
+    entry.bind('<Return>', on_return)
 
     listbox = tk.Listbox(root)
     listbox.pack()
