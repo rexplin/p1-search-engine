@@ -21,7 +21,7 @@ def on_space(event):
         data = []
         # a very basic sort, if any item in the list contains the text we got from the entry,
         # then that is added to the results list
-        for item in test_list:
+        for item in querylog_data:
             if value in item.lower():
                 data.append(item)
 
@@ -63,11 +63,17 @@ def on_select(event):
     entry.delete(0, 'end')
     entry.insert(0, result)
 
-    entry.focus_set()
-
 
 if __name__ == "__main__":
     test_list = ('python how to', 'python select', 'python unit tests')
+
+    with open('querylogs/Clean-Data-01.txt', 'r') as f:
+        filedata = f.readlines()
+
+    querylog_data = []
+    for line in filedata:
+        columns = line.split('\t')
+        querylog_data.append(columns[1])
 
     root = tk.Tk()
 
