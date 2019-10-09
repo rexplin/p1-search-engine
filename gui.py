@@ -26,7 +26,7 @@ def on_space(event):
             if value in item.lower():
                 data.append(item)
                 count += 1
-                if count >= 10: # can use to decide how many results to show
+                if count >= 10:  # can use to decide how many results to show
                     break
 
     # update data in listbox
@@ -80,15 +80,21 @@ if __name__ == "__main__":
         querylog_data.append(columns[1])
 
     root = tk.Tk()
+    root.geometry("800x600")
+    root.title("Search")
 
+    label = tk.Label(root, text="Query:", font="Times 14 bold", fg="black", height=1, width=8)
+    label.grid(row=1, column=0)
     entry = tk.Entry(root)
-    entry.pack()
+    entry.configure(width=75)
+    entry.grid(row=1, column=1, columnspan=20, padx=10)
 
     entry.bind('<space>', on_space)
     entry.bind('<Return>', on_return)
 
     listbox = tk.Listbox(root)
-    listbox.pack()
+    listbox.configure(width=75)
+    listbox.grid(row=2, column=1, columnspan=30, padx=10, sticky="W")
 
     listbox.bind('<<ListboxSelect>>', on_select)
 
