@@ -1,4 +1,71 @@
 import tkinter as tk
+from collections import defaultdict, Counter
+from sortedcontainers import SortedDict
+from datetime import timedelta
+from dateutil import parser
+
+
+def most_frequent(query_log):
+    """
+    Return most frequent search query in the query log
+
+    :param query_log: Log of all queries provided
+    :return: Query that occurs most often
+    """
+    counter = Counter(query_log)
+    most_common = counter.most_common(1)
+    return most_common[0][0], most_common[0][1]
+
+
+def query_score(candidate, query):
+    """
+    Determines the rank of a query suggestion candidate
+
+    Function:     Freq(CQ) + Mod(CQ, q') + Time(CQ, q')
+              ----------------------------------------------
+              1 - min([Freq(CQ), Mod(CQ, q'), Time(CQ, q')])
+
+
+    q': n-gram triggering the suggestion
+    CQ: Candidate query to be scored
+    QL: Query Log
+    Freq(CQ): Frequency of CQ occurring in the Query Log, divided by the maximum frequency of
+              occurrence of any query in QL
+    Mod(CQ, q'): Number of sessions in which q' is modified to CQ divided by the total number
+                 of sessions that q' appears in
+    Time(CQ, q'): The minimum difference between the time occurrence of q' and CQ across sessions in which
+                  both q' and CQ appear divided by the longest session length in QL
+
+    :return: Score value for the candidate
+    """
+
+    # Calculate the Freq(CQ) value
+
+    # max_q, max_q_count = most_frequent(querylog_data)
+    max_q_count = 83677  # Hardcoded because the above line takes a little bit to run
+    freq_cq = querylog_data.count(candidate) / max_q_count
+
+    q_sessions = set()
+    mod_sessions = 0
+    min_diff = timedelta(0)
+    for q_occurs, c_occurs in zip(sessions[query], sessions[candidate]):
+        # This is used to determine the number of sessions that contain q'
+        q_sessions.add(q_occurs["sid"])
+
+        # Determine how many times q' turns into CQ
+        if q_occurs["sid"] == c_occurs["sid"] and parser.parse(c_occurs["time"]) > parser.parse(q_occurs["time"]):
+            mod_sessions += 1
+
+    total_sessions = len(q_sessions)
+    mod_cq_q_prime = mod_sessions / total_sessions if total_sessions > 0 else 1
+
+    longest_session = 7946741000
+    time_cq_q_prime = (min_diff.total_seconds() * 1000) / longest_session
+
+    num = freq_cq + mod_cq_q_prime + time_cq_q_prime
+    denom = 1 - min([freq_cq, mod_cq_q_prime, time_cq_q_prime])
+
+    return num / denom
 
 
 def on_space(event):
@@ -13,21 +80,24 @@ def on_space(event):
     # get text from entry
     value = event.widget.get()
     value = value.strip().lower()
+    suggestions = SortedDict()
 
     # get data from test_list
     count = 0
     if value == '':
         data = ""
     else:
-        data = []
-        # a very basic sort, if any item in the list contains the text we got from the entry,
-        # then that is added to the results list
         for item in querylog_data:
-            if value in item.lower():
-                data.append(item)
+            if item.lower().startswith(value):
+                score = query_score(item, value)
+                suggestions[score] = item
+
                 count += 1
-                if count >= 10:  # can use to decide how many results to show
+                if count >= 1000:  # can use to decide how many results to show
                     break
+
+        # Returns the 10 suggestions with highest scores of the 1000 found
+        data = list(suggestions.values())[:10]
 
     # update data in listbox
     listbox_update(data)
@@ -50,7 +120,7 @@ def listbox_update(data):
     listbox.delete(0, 'end')
 
     # sorting data
-    data = sorted(data, key=str.lower)
+    # data = sorted(data, key=str.lower)
 
     # put new data
     for item in data:
@@ -68,15 +138,35 @@ def on_select(event):
     entry.insert(0, result)
 
 
-if __name__ == "__main__":
-    test_list = ('python how to', 'python select', 'python unit tests')
+# This is no longer used, it's simply left here to demonstrate what I did to find the value in the comment
+def max_session_length(data):
+    """
+    Function to find longest session in a set of QL data
 
-    with open('querylogs/Clean-Data-01.txt', 'r') as f:
+    Longest session value, in milliseconds in case it gets deleted: 7946741000
+
+    :param data: Query log data
+    :return: Returns length of longest session in QL
+    """
+
+    max_length = timedelta(0)
+    for sid, timestamps in data.items():
+        difference = timestamps[-1] - timestamps[0]
+        if difference > max_length:
+            max_length = difference
+
+    return max_length
+
+
+if __name__ == "__main__":
+    with open('querylogs/Clean-Data.txt', 'r') as f:
         filedata = f.readlines()
 
-    querylog_data = []
-    for line in filedata:
+    querylog_data = list()
+    sessions = defaultdict(list)
+    for line in filedata[1:]:
         columns = line.split('\t')
+        sessions[columns[1]].append({"sid": columns[0], "time": columns[2]})
         querylog_data.append(columns[1])
 
     root = tk.Tk()
