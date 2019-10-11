@@ -1,3 +1,5 @@
+from bplustree import BPlusTree, StrSerializer
+from bplustree.memory import ReachedEndOfFile
 from collections import OrderedDict
 from fullStopWordList import stopwords as stop_words
 from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
@@ -51,14 +53,15 @@ def index_worker(queue, index_queue, pp_docs_queue):
     queue.task_done()
 
 
-def do_work(document, index_queue, pp_docs_queue):
+def do_work(document, index_tree, pp_docs_queue):
     # process
     index = dict()
     unique_id = 1
     doc_id = document["id"]
     stemmer = nltk.stem.snowball.EnglishStemmer()
     tokens = nltk.word_tokenize(f"{document['title']} {document['content']}")
-    filtered = [token.lower() for token in tokens if token not in stop_words]
+    ascii_tokens = [ascii_token for ascii_token in tokens if is_ascii(ascii_token)]
+    filtered = [token.lower() for token in ascii_tokens if token not in stop_words]
     processed_tokens = [stemmer.stem(token) for token in filtered if token.isalpha()]
 
     # Process one more time for stop words after lemmatizing cause we might still have things like 'a' leftover
@@ -66,20 +69,62 @@ def do_work(document, index_queue, pp_docs_queue):
     pp_docs_queue.put({"id": doc_id, "text": " ".join(final_tokens)})
 
     for token in final_tokens:
-        # add the document id followed by the line location into the dictionary/list
         pos = unique_id
-        if token not in index:
-            index.update({token: [f"{doc_id}:{pos}"]})
-        else:
-            index[token].append(f"{doc_id}:{pos}")
-        unique_id += 1
+        try:
+            existing = tree.get(token)
+            if existing:
+                existing = existing.decode()
+                updated = "|".join([existing, f"{doc_id}:{pos}"])
+                index_tree.insert(token, updated.encode(), replace=True)
+            else:
+                index_tree.insert(token, f"{doc_id}:{pos}".encode())
+        except AssertionError:
+            with open("error-log.txt", "a") as log:
+                log.write(f"Assertion: {token} - {doc_id}:{pos}")
+                log.write('\n')
+            continue
+        except ReachedEndOfFile:
+            with open("error-log.txt", "a") as log:
+                log.write(f"EOF: {token} - {doc_id}:{pos}")
+                log.write('\n')
+            continue
+        except IndexError:
+            with open("error-log.txt", "a") as log:
+                log.write(f"Index: {token} - {doc_id}:{pos}")
+                log.write('\n')
+            continue
 
-    index_queue.put(index)
+        unique_id += 1
+    # for token in final_tokens:
+    #     # add the document id followed by the line location into the dictionary/list
+    #     pos = unique_id
+    #     if token not in index:
+    #         index.update({token: [f"{doc_id}:{pos}"]})
+    #     else:
+    #         index[token].append(f"{doc_id}:{pos}")
+    #     unique_id += 1
+    #
+    # index_queue.put(index)
+
+
+def is_ascii(text):
+    if isinstance(text, str):
+        try:
+            text.encode('ascii')
+        except UnicodeEncodeError:
+            return False
+    else:
+        try:
+            text.decode('ascii')
+        except UnicodeDecodeError:
+            return False
+    return True
 
 
 if __name__ == "__main__":
     work = Queue()
-    results = Queue()
+    # results = Queue()
+    tree = BPlusTree("./index/index.db", serializer=StrSerializer(), order=50, key_size=20)
     pp_docs = Queue()
     num_workers = 8
     threads = []
@@ -88,8 +133,8 @@ if __name__ == "__main__":
 
     try:
         # produce data
-        # with open("test_data_lines.json", "r") as f:
-        with open("wikipedia_data_lines.json", "r") as f:
+        with open("test_data_lines.json", "r") as f:
+        # with open("wikipedia_data_lines.json", "r") as f:
             for entry in f:
                 if count == 10000:
                     break
@@ -98,7 +143,7 @@ if __name__ == "__main__":
 
         # start for workers
         for i in range(num_workers):
-            t = threading.Thread(target=index_worker, args=(work, results, pp_docs))
+            t = threading.Thread(target=index_worker, args=(work, tree, pp_docs))
             t.daemon = True
             t.start()
             threads.append(t)
@@ -107,17 +152,17 @@ if __name__ == "__main__":
         work.join()
 
         # get the results
-        print("Retrieving results and building final index")
-        while not results.empty():
-            partial = results.get()
-            if partial is not None:
-                for key, val in partial.items():
-                    if key in total_index:
-                        total_index[key].extend(val)
-                    else:
-                        total_index[key] = val
-
-            results.task_done()
+        # print("Retrieving results and building final index")
+        # while not results.empty():
+        #     partial = results.get()
+        #     if partial is not None:
+        #         for key, val in partial.items():
+        #             if key in total_index:
+        #                 total_index[key].extend(val)
+        #             else:
+        #                 total_index[key] = val
+        #
+        #     results.task_done()
 
         # Load the pre-processed docs into an array
     #     pp_docs_list = list()
@@ -152,12 +197,15 @@ if __name__ == "__main__":
         for t in threads:
             t.join()
 
-        print("Writing index file...")
-        ordered_index = OrderedDict(sorted(total_index.items()))
-        with open("output.json", "w") as file:
-            file.write(simplejson.dumps(ordered_index))
-            file.write("\n")
-            sys.exit()
+        # print("Writing index file...")
+        # ordered_index = OrderedDict(sorted(total_index.items()))
+        # with open("ascii_index.json", "w") as file:
+        #     file.write(simplejson.dumps(ordered_index))
+        #     file.write("\n")
+        #     sys.exit()
+
+        print(f"# Keys: {len(tree.keys())}")
+
 
     except KeyboardInterrupt:
         print("Terminating workers...")
