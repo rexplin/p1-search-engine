@@ -10,61 +10,6 @@ import threading
 import sys
 
 
-def parsing_worker(queue, parsed_docs_queue):
-    while True:
-        item = queue.get()
-
-        if item is None or queue.empty():
-            break
-
-        parse_document(item, parsed_docs_queue)
-        queue.task_done()
-
-    # Make sure last task completes or it locks
-    queue.task_done()
-
-
-def parse_document(document, parsed_docs_queue):
-
-    # Pre-process the content of the document
-    unique_id = 1
-    doc_id = document["id"]
-    stemmer = nltk.stem.snowball.EnglishStemmer()
-    tokens = nltk.word_tokenize(f"{document['title']} {document['content']}")
-    ascii_tokens = [ascii_token for ascii_token in tokens if is_ascii(ascii_token)]
-    filtered = [token.lower() for token in ascii_tokens if token not in stop_words]
-    processed_tokens = [stemmer.stem(token) for token in filtered if token.isalpha()]
-
-    # Process one more time for stop words after lemmatizing cause we might still have things like 'a' leftover
-    final_tokens = [token for token in processed_tokens if token not in stop_words]
-    # pp_docs_queue.put({"id": doc_id, "text": " ".join(final_tokens)})
-
-    for token in final_tokens:
-        pos = unique_id
-        parsed_docs_queue.put({"token": token, "doc_id": doc_id, "position": pos})
-
-        unique_id += 1
-
-
-def is_ascii(text):
-    if isinstance(text, str):
-        try:
-            text.encode('ascii')
-        except UnicodeEncodeError:
-            return False
-    else:
-        try:
-            text.decode('ascii')
-        except UnicodeDecodeError:
-            return False
-    return True
-
-
-def sort_coo(coo_matrix):
-    tuples = zip(coo_matrix.col, coo_matrix.data)
-    return sorted(tuples, key=lambda x: (x[1], x[0]), reverse=True)
-
-
 # def extract_topn_from_vector(feature_names, sorted_items, topn=10):
 #    """get the feature names and tf-idf score of top n items"""
 
@@ -89,6 +34,104 @@ def sort_coo(coo_matrix):
 #     return results
 
 
+def parsing_worker(queue, parsed_docs_queue):
+    while True:
+        item = queue.get()
+
+        if item is None or queue.empty():
+            break
+
+        parse_document(item, parsed_docs_queue)
+        queue.task_done()
+
+    # Make sure last task completes or it locks
+    queue.task_done()
+    parsed_docs.put(None)
+
+
+def writing_worker(queue, tree):
+    while True:
+        sys.stdout.write(f"{queue.qsize()}    \r")
+        sys.stdout.flush()
+        parsed_doc = queue.get()
+
+        if parsed_doc is None or queue.empty():
+            print("Nothing to write...")
+            queue.task_done()
+            return
+
+        write_index(tree, parsed_doc)
+        queue.task_done()
+
+
+def parse_document(document, parsed_docs_queue):
+
+    # Pre-process the content of the document
+    unique_id = 1
+    doc_id = document["id"]
+    stemmer = nltk.stem.snowball.EnglishStemmer()
+    tokens = nltk.word_tokenize(f"{document['title']} {document['content']}")
+    ascii_tokens = [ascii_token for ascii_token in tokens if is_ascii(ascii_token)]
+    filtered = [token.lower() for token in ascii_tokens if token not in stop_words]
+    processed_tokens = [stemmer.stem(token) for token in filtered if token.isalpha()]
+
+    # Process one more time for stop words after lemmatizing cause we might still have things like 'a' leftover
+    final_tokens = [token for token in processed_tokens if token not in stop_words]
+    # pp_docs_queue.put({"id": doc_id, "text": " ".join(final_tokens)})
+
+    for token in final_tokens:
+        pos = unique_id
+        parsed_docs_queue.put({"token": token, "doc_id": doc_id, "position": pos})
+
+        unique_id += 1
+
+
+def write_index(tree, parsed_doc):
+    try:
+        existing = tree.get(parsed_doc["token"])
+        if existing:
+            existing = existing.decode()
+            updated = "|".join([existing, f"{parsed_doc['doc_id']}:{parsed_doc['position']}"])
+            tree.insert(parsed_doc["token"], updated.encode(), replace=True)
+        else:
+            tree.insert(parsed_doc["token"], f"{parsed_doc['doc_id']}:{parsed_doc['position']}".encode())
+    except AssertionError:
+        with open("error-log.txt", "a") as log:
+            log.write(f"Assertion: {parsed_doc['token']} - {parsed_doc['doc_id']}:{parsed_doc['position']}")
+            log.write('\n')
+        return
+    except ReachedEndOfFile:
+        with open("error-log.txt", "a") as log:
+            log.write(f"EOF: {parsed_doc['token']} - {parsed_doc['doc_id']}:{parsed_doc['position']}")
+            log.write('\n')
+        return
+    except IndexError:
+        with open("error-log.txt", "a") as log:
+            log.write(f"Index: {parsed_doc['token']} - {parsed_doc['doc_id']}:{parsed_doc['position']}")
+            log.write('\n')
+        return
+    return
+
+
+def is_ascii(text):
+    if isinstance(text, str):
+        try:
+            text.encode('ascii')
+        except UnicodeEncodeError:
+            return False
+    else:
+        try:
+            text.decode('ascii')
+        except UnicodeDecodeError:
+            return False
+    return True
+
+
+def sort_coo(coo_matrix):
+    tuples = zip(coo_matrix.col, coo_matrix.data)
+    return sorted(tuples, key=lambda x: (x[1], x[0]), reverse=True)
+
+
 if __name__ == "__main__":
     work = Queue()
     parsed_docs = Queue()
@@ -102,8 +145,8 @@ if __name__ == "__main__":
 
     try:
         # produce data
-        # with open("test_data_lines.json", "r") as f:
-        with open("wikipedia_data_lines.json", "r") as f:
+        with open("test_data_lines.json", "r") as f:
+        # with open("wikipedia_data_lines.json", "r") as f:
             for entry in f:
                 # if count == 10000:
                 #     break
@@ -117,41 +160,11 @@ if __name__ == "__main__":
             t.start()
             threads.append(t)
 
-        print("Performing work.join()")
-        work.join()
-
-        print("Writing the tree...")
-        while not parsed_docs.empty():
-            parsed_doc = parsed_docs.get()
-            if parsed_doc is not None:
-                try:
-                    existing = tree.get(parsed_doc["token"])
-                    if existing:
-                        existing = existing.decode()
-                        updated = "|".join([existing, f"{parsed_doc['doc_id']}:{parsed_doc['position']}"])
-                        tree.insert(parsed_doc["token"], updated.encode(), replace=True)
-                        parsed_docs.task_done()
-                    else:
-                        tree.insert(parsed_doc["token"], f"{parsed_doc['doc_id']}:{parsed_doc['position']}".encode())
-                        parsed_docs.task_done()
-                except AssertionError:
-                    with open("error-log.txt", "a") as log:
-                        log.write(f"Assertion: {parsed_doc['token']} - {parsed_doc['doc_id']}:{parsed_doc['position']}")
-                        log.write('\n')
-                    parsed_docs.task_done()
-                    continue
-                except ReachedEndOfFile:
-                    with open("error-log.txt", "a") as log:
-                        log.write(f"EOF: {parsed_doc['token']} - {parsed_doc['doc_id']}:{parsed_doc['position']}")
-                        log.write('\n')
-                    parsed_docs.task_done()
-                    continue
-                except IndexError:
-                    with open("error-log.txt", "a") as log:
-                        log.write(f"Index: {parsed_doc['token']} - {parsed_doc['doc_id']}:{parsed_doc['position']}")
-                        log.write('\n')
-                    parsed_docs.task_done()
-                    continue
+        # This is the thread that writes to the tree
+        writer = threading.Thread(target=writing_worker, args=(parsed_docs, tree))
+        writer.daemon = True
+        writer.start()
+        threads.append(writer)
 
         # get the results
         # print("Retrieving results and building final index")
@@ -195,11 +208,16 @@ if __name__ == "__main__":
         for i in range(num_workers - 1):
             work.put(None)
 
-        parsed_docs.put(None)
-
         print("Terminating threads...")
         for t in threads:
             t.join()
+
+        # print("Writing index file...")
+        # ordered_index = OrderedDict(sorted(total_index.items()))
+        # with open("ascii_index.json", "w") as file:
+        #     file.write(simplejson.dumps(ordered_index))
+        #     file.write("\n")
+        #     sys.exit()
 
         print(f"# Keys: {len(list(tree.keys()))}")
 
