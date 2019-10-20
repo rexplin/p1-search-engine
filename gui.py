@@ -3,6 +3,8 @@ from collections import defaultdict, Counter
 from sortedcontainers import SortedDict
 from datetime import timedelta
 from dateutil import parser
+from search_index import search_index
+import json
 
 
 def most_frequent(query_log):
@@ -76,7 +78,6 @@ def on_space(event):
     :param event: space bar is pressed
     :return: None
     """
-    print("Hey you hit the space bar!")
     # get text from entry
     value = event.widget.get()
     value = value.strip().lower()
@@ -112,7 +113,20 @@ def on_return(event):
     """
     # get text from entry
     result = event.widget.get()
-    print(result)
+
+    # Change status message
+    display_message("Searching...")
+
+    # Begin the search for the query
+    related_documents = search_index(result)
+
+    # Get the Top 10 for display
+    results = get_originals(related_documents)
+
+    # Update status one more time
+    display_message("Search complete!")
+
+    listbox_update(results)
 
 
 def listbox_update(data):
@@ -138,6 +152,28 @@ def on_select(event):
     entry.insert(0, result)
 
 
+def get_originals(related_documents):
+    """
+        Grabs the titles of the related documents to be returned
+
+    :param related_documents: List of document ids retrieved from the index
+    :return: List of document titles to be displayed for the user
+    """
+    document_titles = list()
+
+    # Right now only finds 10 documents
+    retrieval_list = related_documents[:10]
+
+    for related_doc in retrieval_list:
+        # TODO Change to final pathway that's self contained to project structure
+        filename = f"../wiki-files-separated/output/wiki-doc-{related_doc}.json"
+        with open(filename, "r") as original_doc:
+            document = json.load(original_doc)
+            document_titles.append(document["title"])
+
+    return document_titles
+
+
 # This is no longer used, it's simply left here to demonstrate what I did to find the value in the comment
 def max_session_length(data):
     """
@@ -158,6 +194,10 @@ def max_session_length(data):
     return max_length
 
 
+def display_message(msg):
+    status_message.set(msg)
+
+
 if __name__ == "__main__":
     with open('querylogs/Clean-Data.txt', 'r') as f:
         filedata = f.readlines()
@@ -173,18 +213,24 @@ if __name__ == "__main__":
     root.geometry("800x600")
     root.title("Search")
 
+    status_message = tk.StringVar()
+    display_message("What are you looking for?")
+    status_label = tk.Label(root, textvariable=status_message, font="Times 12 italic", fg="black", height=1, width=75,
+                            padx=10, pady=10)
+    status_label.grid(row=1, column=1, sticky="W")
+
     label = tk.Label(root, text="Query:", font="Times 14 bold", fg="black", height=1, width=8)
-    label.grid(row=1, column=0)
+    label.grid(row=2, column=0)
     entry = tk.Entry(root)
     entry.configure(width=75)
-    entry.grid(row=1, column=1, columnspan=20, padx=10)
+    entry.grid(row=2, column=1, columnspan=20, padx=10)
 
     entry.bind('<space>', on_space)
     entry.bind('<Return>', on_return)
 
     listbox = tk.Listbox(root)
     listbox.configure(width=75)
-    listbox.grid(row=2, column=1, columnspan=30, padx=10, sticky="W")
+    listbox.grid(row=3, column=1, columnspan=30, padx=10, sticky="W")
 
     listbox.bind('<<ListboxSelect>>', on_select)
 
