@@ -44,7 +44,7 @@ def get_snippet(doc_id, query_terms):
                             else:
                                 query_term_dict[term] = 1
                 print(query_term_dict)
-                num_sentences = num_sentences / len(query_term_dict)
+                num_sentences /= len(query_term_dict)
                 print(num_sentences)
                 query_tfs = tf(query_terms)
                 query_idfs = idf(num_sentences, query_term_dict)
@@ -57,18 +57,13 @@ def get_snippet(doc_id, query_terms):
 
 
 def tf(values):
-    temp_vals = list()
     tf_vals = list()
     occurrence_count = Counter(values)
     max_d = occurrence_count.most_common(1)[0][1]
 
-    for item in occurrence_count.items():
-        temp_vals.append(item)
-
-    for item in temp_vals:
-        temp = list(item)
-        temp[1] = temp[1] / max_d
-        tf_vals.append(temp)
+    for item, count in occurrence_count.items():
+        count /= max_d
+        tf_vals.append((item, count))
 
     return tf_vals
 
