@@ -127,25 +127,32 @@ def on_return(event):
     # Retrieve snippets for Top 20
     snippets = list()
     for candidate_id in candidate_doc_ids:
-        snippets.append(get_snippet(candidate_id, result))
+        snippet = get_snippet(int(candidate_id), result)
+        snippets.append(snippet)
 
     # Update status one more time
     display_message("Search complete!")
     root.update()
 
-    listbox_update(snippets)
+    textbox_update(snippets)
 
 
 def listbox_update(data):
     # delete previous data
     listbox.delete(0, 'end')
 
-    # sorting data
-    # data = sorted(data, key=str.lower)
-
     # put new data
     for item in data:
         listbox.insert('end', item)
+
+
+def textbox_update(data):
+    # delete previous data
+    textbox.delete(1.0, 'end')
+
+    # put new data
+    for item in data:
+        textbox.insert('end', item)
 
 
 def on_select(event):
@@ -217,7 +224,7 @@ if __name__ == "__main__":
         querylog_data.append(columns[1])
 
     root = tk.Tk()
-    root.geometry("800x600")
+    root.geometry("1920x1080")
     root.title("Search")
 
     status_message = tk.StringVar()
@@ -229,16 +236,26 @@ if __name__ == "__main__":
     label = tk.Label(root, text="Query:", font="Times 14 bold", fg="black", height=1, width=8)
     label.grid(row=2, column=0)
     entry = tk.Entry(root)
-    entry.configure(width=75)
+    entry.configure(width=200)
     entry.grid(row=2, column=1, columnspan=20, padx=10)
 
     entry.bind('<space>', on_space)
     entry.bind('<Return>', on_return)
 
+    listbox_label = tk.Label(root, text="Suggested Queries:", font="Times 14 bold", fg="black", height=1, width=75)
+    listbox_label.grid(row=4, column=1, sticky="W")
+
     listbox = tk.Listbox(root)
-    listbox.configure(width=75)
-    listbox.grid(row=3, column=1, columnspan=30, padx=10, sticky="W")
+    listbox.configure(width=85, height=40)
+    listbox.grid(row=5, column=1, columnspan=30, padx=10, pady=10, sticky="W")
 
     listbox.bind('<<ListboxSelect>>', on_select)
+
+    textbox_label = tk.Label(root, text="Search Results:", font="Times 14 bold", fg="black", height=1, width=75)
+    textbox_label.grid(row=4, column=9, sticky="W")
+
+    textbox = tk.Text(root, wrap=tk.WORD)
+    textbox.configure(width=85, height=50)
+    textbox.grid(row=5, column=9, columnspan=30, padx=10, pady=10, sticky="W")
 
     root.mainloop()
