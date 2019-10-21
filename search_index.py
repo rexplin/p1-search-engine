@@ -16,7 +16,7 @@ def pre_process_query(query):
     return final_tokens
 
 
-def search_index(term, current_index):
+def search_index(term):
     """
     Load the index and look for documents related to a term
 
@@ -37,13 +37,13 @@ def search_index(term, current_index):
     # potential_docs = list()
 
     for token in search_tokens:
-       #  potential_docs = list()
-        #for num in range(1, 9):
-        # with open("hashTFIDFPickleFinal", "rb") as index_file:
-         #    current_index = pickle.load(index_file)
-        # potential_docs.extend(current_index.get(token, []))
+        potential_docs = list()
+        for num in range(1, 9):
+            with open(f"hashTFIDFPickle{num}", "rb") as index_file:
+                current_index = pickle.load(index_file)
+                potential_docs.extend(current_index.get(token, []))
 
-        token_docs.append(current_index.get(token))
+        token_docs.append(potential_docs)
 
     token_docs.sort(key=len)
 
@@ -101,10 +101,10 @@ def retrieve_originals(related_documents):
 
 
 if __name__ == "__main__":
-    with open("hashTFIDFPickleFinal", "rb") as index_file:
-        index = pickle.load(index_file)
+#    with open("hashTFIDFPickleFinal", "rb") as index_file:
+ #       index = pickle.load(index_file)
     search_term = input("Give me a term: ")
-    documents = search_index(search_term, index)
+    documents = search_index(search_term)
     titles = retrieve_originals(documents)
     print(f"Found {len(documents)} related documents:\n\n")
     # print(sorted([int(document.split(":")[0]) for document in documents]))
