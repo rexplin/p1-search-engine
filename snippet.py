@@ -54,7 +54,6 @@ def get_snippet(doc_id, query_terms):
                 for sentence in sentences:
                     processed_tokens = pre_process_query(sentence)
                     sentence_tfs = tf(processed_tokens, qt=query_terms)
-                    print(sentence_tfs)
                     sentence_idfs = idf(num_sentences, query_term_dict)
                     if len(sentence_tfs) == 0:
                         continue
@@ -166,8 +165,14 @@ def denominator(sentence_tf_idfs, query_tf_idfs):
         sentence_results.append(math.pow(sentence_tf_idf[1], 2))
     query_sum = sum(query_results)
     sentence_sum = sum(sentence_results)
-    final_result = query_sum * sentence_sum
+    result = query_sum * sentence_sum
+    final_result = math.sqrt(result)
     return final_result
+
+
+def cosine_similarity(numer, denom):
+    result = numer / denom
+    return result
 
 
 if __name__ == "__main__":
