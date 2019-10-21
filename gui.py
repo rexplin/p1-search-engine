@@ -115,8 +115,10 @@ def on_return(event):
     # get text from entry
     result = event.widget.get()
 
-    # Change status message
+    # Change status message and empty the listbox of query suggestions
     display_message("Searching...")
+    listbox_update(list())
+    root.update()
 
     # Begin the search for the query
     related_documents = search_index(result)
@@ -129,6 +131,7 @@ def on_return(event):
 
     # Update status one more time
     display_message("Search complete!")
+    root.update()
 
     listbox_update(snippets)
 
