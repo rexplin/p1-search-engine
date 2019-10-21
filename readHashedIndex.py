@@ -5,7 +5,7 @@ import pandas as pd
 import json
 if __name__ == "__main__":
     for num in range(1, 9):
-        with open(f'hashed-index/hashIndexPickle{num}', 'rb') as hashedIndexFile:
+        with open(f'hashIndexPickle{num}', 'rb') as hashedIndexFile:
             print("loading first pickled index")
             hashedIndex = pickle.load(hashedIndexFile)
             print("finished, starting tfidf generation")
@@ -34,9 +34,9 @@ if __name__ == "__main__":
                 idf = hashedIndex.get_document_frequency(terms)
                 if tf / idf:  # check if tf/idf > 0
                     if terms not in tfidf:
-                        tfidf.update({terms: [f"{DocWithTerm}:{round(tf/idf,5)}"]})  # build tfidf
+                        tfidf.update({terms: [f"{DocWithTerm}:{tf/idf}"]})  # build tfidf
                     else:
-                        tfidf[terms].append(f"{DocWithTerm}:{round(tf / idf, 5)}")
+                        tfidf[terms].append(f"{DocWithTerm}:{tf / idf}")
         # print(tfidf)
         print("finished, starting file dump")
         # df = pd.DataFrame(tfidf, index=tfidf.get('documents'))

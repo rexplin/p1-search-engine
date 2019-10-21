@@ -27,6 +27,7 @@ def search_index(term):
     # Set up storage variables
     token_docs = list()
     final_documents = list()
+    final_final_documents = dict()
 
     # Pre-process the search term, same as we do for generating the index
     search_tokens = pre_process_query(term)
@@ -54,11 +55,19 @@ def search_index(term):
             matches = list(filter(compare, token_doc))
             if len(matches) > 0:
                 final_documents.extend(matches)
-
     else:
         for token_doc in token_docs:
             final_documents.extend(token_doc)
-
+    for token_finalDoc in final_documents:
+        splitArray = token_finalDoc.split(":")
+        splitID = splitArray[0]
+        splitTFIDF = float(splitArray[1])
+        if splitID in final_final_documents:
+            pastTFIDF = float(final_final_documents.get(splitID).split(":")[1])
+            final_final_documents.update({splitID: f"{splitID}:{((pastTFIDF + splitTFIDF) / len(search_tokens))}"})
+        else:
+            final_final_documents.update({splitID: f"{splitID}:{splitTFIDF}"})
+    print(final_documents)
     return sorted(final_documents, key=lambda x: x.split(":")[1], reverse=True)
 
 
