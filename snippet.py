@@ -21,7 +21,7 @@ def get_snippet(doc_id, query_terms):
     :return: title of document and two sentence snippet
     """
 
-    with open("test_data_lines.json", "r") as f:
+    with open("wikipedia_data_lines.json", "r") as f:
         for entry in f:
             document = simplejson.loads(entry)
             # finds the document with the correct id
@@ -41,15 +41,17 @@ def get_snippet(doc_id, query_terms):
                                 query_term_dict[term] += 1
                             else:
                                 query_term_dict[term] = 1
-                num_sentences /= len(query_term_dict)
+                num_query_terms = len(query_term_dict)
+                num_sentences /= num_query_terms if num_query_terms > 0 else 1
                 print(num_sentences)
                 query_tfs = tf(query_terms)
                 query_idfs = idf(num_sentences, query_term_dict)
                 for sentence in sentences:
                     processed_tokens = pre_process_query(sentence)
                     sentence_tfs = tf(processed_tokens, qt=query_terms)
-                    print(sentence_tfs)
                     sentence_idfs = idf(num_sentences, query_term_dict)
+                    sentence_tf_idfs = tf_idf(sentence_tfs, sentence_idfs)
+                break
 
 
 def tf(values, qt=None):
@@ -79,6 +81,11 @@ def idf(n, nw):
     return idf_vals
 
 
+def tf_idf(tfs, idfs):
+    for tf in tfs:
+        print(tf)
+
+
 def numerator(sentence):
     val = 0
 
@@ -87,6 +94,6 @@ def numerator(sentence):
 
 if __name__ == "__main__":
     query = ['adolf', 'swedish', 'model', 'architect']
-    doc = 35
+    doc = 1661981
     # CURRENTLY ASSUMES THAT THE QUERY HAS ALREADY BEEN STEMMED AND TOKENIZED
     get_snippet(doc, query)
