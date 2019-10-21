@@ -26,7 +26,8 @@ def get_snippet(doc_id, query_terms):
             document = simplejson.loads(entry)
             # finds the document with the correct id
             if document["id"] == doc_id:
-                print(document["title"])
+                snippet = document["title"] + "\n"
+                snippet.join("\n")
                 # tokenizes the content of the document by sentences
                 sentences = nltk.sent_tokenize(f"{document['content']}")
                 num_sentences = 0
@@ -50,6 +51,7 @@ def get_snippet(doc_id, query_terms):
                 query_idfs = idf(num_sentences, query_term_dict)
                 query_tf_idfs = tf_idf(query_tfs, query_idfs)
 
+                similarities = list()
                 # calculates for each sentence
                 for sentence in sentences:
                     processed_tokens = pre_process_query(sentence)
@@ -61,9 +63,15 @@ def get_snippet(doc_id, query_terms):
                         sentence_tf_idfs = tf_idf(sentence_tfs, sentence_idfs)
                         numer = numerator(sentence_tf_idfs, query_tf_idfs)
                         denom = denominator(sentence_tf_idfs, query_tf_idfs)
-                        print(numer)
-                        print(denom)
-                break
+                        cosine = cosine_similarity(numer, denom)
+                        similarities.append((sentence, cosine))
+                # sorts the list by the cosine similarity value in descending order
+                similarities.sort(key=lambda tup: tup[1], reverse=True)
+                print(similarities)
+                top_two = similarities[:2]
+                for item in top_two:
+                    snippet += item[0] + "\n"
+                return snippet
 
 
 def tf(values, qt=None):
@@ -176,9 +184,11 @@ def cosine_similarity(numer, denom):
 
 
 if __name__ == "__main__":
-    # query = ['adolf', 'swedish', 'model', 'architect']
-    # doc = 35
-    query = ['anthoni', 'unit', 'state', 'post', 'offic']
-    doc = 20075
-    # CURRENTLY ASSUMES THAT THE QUERY HAS ALREADY BEEN STEMMED AND TOKENIZED
-    get_snippet(doc, query)
+    query = ['adolf', 'swedish', 'model', 'architect']
+    doc = 35
+    query2 = ['anthoni', 'unit', 'state', 'post', 'offic']
+    doc2 = 20075
+    doc3 = 1660406
+    print(get_snippet(doc, query))
+    print(get_snippet(doc2, query2))
+    print(get_snippet(doc3, query2))
