@@ -31,6 +31,8 @@ def get_snippet(doc_id, query_terms):
                 sentences = nltk.sent_tokenize(f"{document['content']}")
                 num_sentences = 0
 
+                # find how many sentences each query term is in. This value is used to calculate the
+                # idf. Also find the number of sentences in the document
                 query_term_dict = {}
                 for term in query_terms:
                     for sentence in sentences:
@@ -43,9 +45,12 @@ def get_snippet(doc_id, query_terms):
                                 query_term_dict[term] = 1
                 num_query_terms = len(query_term_dict)
                 num_sentences /= num_query_terms if num_query_terms > 0 else 1
+                # calculates for the query
                 query_tfs = tf(query_terms)
                 query_idfs = idf(num_sentences, query_term_dict)
-                query_tfidf = tf_idf(query_tfs, query_idfs)
+                query_tf_idfs = tf_idf(query_tfs, query_idfs)
+
+                # calculates for each sentence
                 for sentence in sentences:
                     processed_tokens = pre_process_query(sentence)
                     sentence_tfs = tf(processed_tokens, qt=query_terms)
@@ -54,10 +59,19 @@ def get_snippet(doc_id, query_terms):
                         continue
                     else:
                         sentence_tf_idfs = tf_idf(sentence_tfs, sentence_idfs)
+                        numer = numerator(sentence_tf_idfs, query_tf_idfs)
                 break
 
 
 def tf(values, qt=None):
+    """
+    function to find the term frequency for each term in the provided list, this is found by dividing
+    the frequency of a word in the list by the most frequenc word in that list
+    TF(w,d) = freq(w,d)/max_d
+    :param values: the words to find the frequency of
+    :param qt: optional: list of query terms to be used
+    :return: list of (term: frequency) pairs
+    """
     tf_vals = list()
     occurrence_count = Counter(values)
     max_d = occurrence_count.most_common(1)[0][1]
@@ -76,6 +90,15 @@ def tf(values, qt=None):
 
 
 def idf(n, nw):
+    """
+    function to calculate the inverse document frequency score this is found by taking the log of the number of sentences
+    divided by the number of sentences the word appears in
+    IDF(w) = log2(N/n_w)
+    :param n: the number of sentences in the document
+    :param nw: the number of sentences in which the query term appears at least once,
+    it is a list of (query term: num sentences) pairs
+    :return:list of (term: idf) pairs
+    """
     idf_vals = list()
     for term, value in nw.items():
         temp_idf = math.log2(n / value)
@@ -85,6 +108,15 @@ def idf(n, nw):
 
 
 def tf_idf(tfs, idfs):
+    """
+    this function finds the tf_idf score for each term passed in the lists
+    the tf idf is only calculated when the term appears in both tfs and idfs, because
+    if it is missing in one the calculation would lead it to be zero, which will effectively be
+    thrown out in later summation
+    :param tfs: list of (term:term frequency) pairs
+    :param idfs: list of (term: inverse document frequency) pairs
+    :return: list of (term: tf_idf) pairs
+    """
     tf_idf_vals = list()
     for tf_val in tfs:
         for idf_val in idfs:
@@ -94,14 +126,30 @@ def tf_idf(tfs, idfs):
     return tf_idf_vals
 
 
-def numerator(sentence):
-    val = 0
+def numerator(sentence_tf_idfs, query_tf_idfs):
+    """
+    This function determines the numerator of the cosine similarity function
+    cosine(d,q) = (Σ d * q)/( Σ d^2 *  Σ q^2)
+    :param sentence_tf_idfs: the tf-idf of each word in the sentence
+    :param query_tf_idfs: the tf-idf of each word the query
+    :return:
+    """
+    result = list()
+    for query_tf_idf in query_tf_idfs:
+        for sentence_tf_idf in sentence_tf_idfs:
+            if sentence_tf_idf[0] == query_tf_idf[0]:
+                val = query_tf_idf[1] * sentence_tf_idf[1]
+                result.append(val)
 
-    return val
+    num = sum(result)
+
+    return num
 
 
 if __name__ == "__main__":
-    query = ['adolf', 'swedish', 'model', 'architect']
-    doc = 35
+    # query = ['adolf', 'swedish', 'model', 'architect']
+    # doc = 35
+    query = ['anthoni', 'unit', 'state', 'post', 'offic']
+    doc = 20075
     # CURRENTLY ASSUMES THAT THE QUERY HAS ALREADY BEEN STEMMED AND TOKENIZED
     get_snippet(doc, query)
