@@ -1,6 +1,9 @@
 import nltk
 import simplejson
 from fullStopWordList import stopwords as stop_words
+from collections import Counter
+from search_index import pre_process_query
+import math
 
 
 def get_snippet(doc_id, query_terms):
@@ -19,36 +22,71 @@ def get_snippet(doc_id, query_terms):
     """
 
     with open("test_data_lines.json", "r") as f:
-        # WOULD LIKE TO OPTIMIZE SO WE CAN INDEX DIRECTLY TO WHERE ID=DOC_ID
         stemmer = nltk.stem.snowball.EnglishStemmer()
         for entry in f:
             document = simplejson.loads(entry)
             # finds the document with the correct id
             if document["id"] == doc_id:
-                print(document["title"])  # for now it prints the title, could be changed to add title to return string?
+                print(document["title"])
                 # print(document["content"])
                 # tokenizes the content of the document by sentences
                 sentences = nltk.sent_tokenize(f"{document['content']}")
-                for sentence in sentences:
-                    # tokenizes the sentence by words, then removes stopwords and converts to lowercase
-                    # then it stems the words, and makes sure they are an alphanumeric word
-                    words = nltk.word_tokenize(sentence)
-                    filtered = [word.lower() for word in words if word not in stop_words]
-                    processed_tokens = [stemmer.stem(word) for word in filtered if word.isalpha()]
+                num_sentences = 0
 
-                    # searches the previously processed list of tokens to see if they contain the query terms
-                    # the sentence will only be printed if all the query terms are found
-                    for term in query_terms:
-                        found = False
-                        for token in processed_tokens:
-                            if term == token:
-                                found = True
-                                break
-                        if not found:
-                            break
-                    if found:
-                        print(sentence)
-                break
+                query_term_dict = {}
+                for term in query_terms:
+                    for sentence in sentences:
+                        num_sentences += 1
+                        processed_tokens = pre_process_query(sentence)
+                        if term in processed_tokens:
+                            if term in query_term_dict:
+                                query_term_dict[term] += 1
+                            else:
+                                query_term_dict[term] = 1
+                print(query_term_dict)
+                num_sentences = num_sentences / len(query_term_dict)
+                print(num_sentences)
+                query_tfs = tf(query_terms)
+                query_idfs = idf(num_sentences, query_term_dict)
+                for sentence in sentences:
+                    processed_tokens = pre_process_query(sentence)
+                    # print(sentence)
+                    sentence_tfs = tf(processed_tokens)
+                    sentence_idfs = idf(num_sentences, query_term_dict)
+                    print(sentence_idfs)
+
+
+def tf(values):
+    temp_vals = list()
+    tf_vals = list()
+    occurrence_count = Counter(values)
+    max_d = occurrence_count.most_common(1)[0][1]
+
+    for item in occurrence_count.items():
+        temp_vals.append(item)
+
+    for item in temp_vals:
+        temp = list(item)
+        temp[1] = temp[1] / max_d
+        tf_vals.append(temp)
+
+    return tf_vals
+
+
+def idf(n, nw):
+    idf_vals = list()
+    for item in nw.items():
+        temp_idf = math.log2(n / item[1])
+        temp = (item[0], temp_idf)
+        idf_vals.append(temp)
+
+    return idf_vals
+
+
+def numerator(sentence):
+    val = 0
+
+    return val
 
 
 if __name__ == "__main__":
