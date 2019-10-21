@@ -4,6 +4,7 @@ from sortedcontainers import SortedDict
 from datetime import timedelta
 from dateutil import parser
 from search_index import search_index
+from snippet import get_snippet
 import json
 
 
@@ -119,14 +120,17 @@ def on_return(event):
 
     # Begin the search for the query
     related_documents = search_index(result)
+    candidate_doc_ids = (related_doc.split(":")[0] for related_doc in related_documents[:20])
 
-    # Get the Top 10 for display
-    results = get_originals(related_documents)
+    # Retrieve snippets for Top 20
+    snippets = list()
+    for candidate_id in candidate_doc_ids:
+        snippets.append(get_snippet(candidate_id, result))
 
     # Update status one more time
     display_message("Search complete!")
 
-    listbox_update(results)
+    listbox_update(snippets)
 
 
 def listbox_update(data):
