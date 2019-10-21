@@ -22,13 +22,11 @@ def get_snippet(doc_id, query_terms):
     """
 
     with open("test_data_lines.json", "r") as f:
-        stemmer = nltk.stem.snowball.EnglishStemmer()
         for entry in f:
             document = simplejson.loads(entry)
             # finds the document with the correct id
             if document["id"] == doc_id:
                 print(document["title"])
-                # print(document["content"])
                 # tokenizes the content of the document by sentences
                 sentences = nltk.sent_tokenize(f"{document['content']}")
                 num_sentences = 0
@@ -43,27 +41,31 @@ def get_snippet(doc_id, query_terms):
                                 query_term_dict[term] += 1
                             else:
                                 query_term_dict[term] = 1
-                print(query_term_dict)
                 num_sentences /= len(query_term_dict)
                 print(num_sentences)
                 query_tfs = tf(query_terms)
                 query_idfs = idf(num_sentences, query_term_dict)
                 for sentence in sentences:
                     processed_tokens = pre_process_query(sentence)
-                    # print(sentence)
-                    sentence_tfs = tf(processed_tokens)
+                    sentence_tfs = tf(processed_tokens, qt=query_terms)
+                    print(sentence_tfs)
                     sentence_idfs = idf(num_sentences, query_term_dict)
-                    print(sentence_idfs)
 
 
-def tf(values):
+def tf(values, qt=None):
     tf_vals = list()
     occurrence_count = Counter(values)
     max_d = occurrence_count.most_common(1)[0][1]
 
     for item, count in occurrence_count.items():
         count /= max_d
-        tf_vals.append((item, count))
+        if qt:
+            if item in qt:
+                tf_vals.append((item, count))
+            else:
+                continue
+        else:
+            tf_vals.append((item, count))
 
     return tf_vals
 
