@@ -43,14 +43,17 @@ def get_snippet(doc_id, query_terms):
                                 query_term_dict[term] = 1
                 num_query_terms = len(query_term_dict)
                 num_sentences /= num_query_terms if num_query_terms > 0 else 1
-                print(num_sentences)
                 query_tfs = tf(query_terms)
                 query_idfs = idf(num_sentences, query_term_dict)
+                query_tfidf = tf_idf(query_tfs, query_idfs)
                 for sentence in sentences:
                     processed_tokens = pre_process_query(sentence)
                     sentence_tfs = tf(processed_tokens, qt=query_terms)
                     sentence_idfs = idf(num_sentences, query_term_dict)
-                    sentence_tf_idfs = tf_idf(sentence_tfs, sentence_idfs)
+                    if len(sentence_tfs) == 0:
+                        continue
+                    else:
+                        sentence_tf_idfs = tf_idf(sentence_tfs, sentence_idfs)
                 break
 
 
@@ -82,8 +85,13 @@ def idf(n, nw):
 
 
 def tf_idf(tfs, idfs):
-    for tf in tfs:
-        print(tf)
+    tf_idf_vals = list()
+    for tf_val in tfs:
+        for idf_val in idfs:
+            if tf_val[0] == idf_val[0]:
+                tf_idf_val = tf_val[1] * idf_val[1]
+                tf_idf_vals.append((tf_val[0], tf_idf_val))
+    return tf_idf_vals
 
 
 def numerator(sentence):
@@ -94,6 +102,6 @@ def numerator(sentence):
 
 if __name__ == "__main__":
     query = ['adolf', 'swedish', 'model', 'architect']
-    doc = 1661981
+    doc = 35
     # CURRENTLY ASSUMES THAT THE QUERY HAS ALREADY BEEN STEMMED AND TOKENIZED
     get_snippet(doc, query)
