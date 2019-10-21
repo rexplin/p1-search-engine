@@ -54,12 +54,16 @@ def get_snippet(doc_id, query_terms):
                 for sentence in sentences:
                     processed_tokens = pre_process_query(sentence)
                     sentence_tfs = tf(processed_tokens, qt=query_terms)
+                    print(sentence_tfs)
                     sentence_idfs = idf(num_sentences, query_term_dict)
                     if len(sentence_tfs) == 0:
                         continue
                     else:
                         sentence_tf_idfs = tf_idf(sentence_tfs, sentence_idfs)
                         numer = numerator(sentence_tf_idfs, query_tf_idfs)
+                        denom = denominator(sentence_tf_idfs, query_tf_idfs)
+                        print(numer)
+                        print(denom)
                 break
 
 
@@ -128,11 +132,11 @@ def tf_idf(tfs, idfs):
 
 def numerator(sentence_tf_idfs, query_tf_idfs):
     """
-    This function determines the numerator of the cosine similarity function
+    This function determines the numerator of the cosine similarity equation
     cosine(d,q) = (Σ d * q)/( Σ d^2 *  Σ q^2)
     :param sentence_tf_idfs: the tf-idf of each word in the sentence
     :param query_tf_idfs: the tf-idf of each word the query
-    :return:
+    :return: value for the numerator of equation
     """
     result = list()
     for query_tf_idf in query_tf_idfs:
@@ -144,6 +148,26 @@ def numerator(sentence_tf_idfs, query_tf_idfs):
     num = sum(result)
 
     return num
+
+
+def denominator(sentence_tf_idfs, query_tf_idfs):
+    """
+    determines the denominator of the cosine similarity equation
+    cosine(d,q) = (Σ d * q)/( Σ d^2 *  Σ q^2)
+    :param sentence_tf_idfs: the tf-idf of each word in the sentence
+    :param query_tf_idfs: the tf-idf of each word the query
+    :return: value for the denominator of equation
+    """
+    query_results = list()
+    sentence_results = list()
+    for query_tf_idf in query_tf_idfs:
+        query_results.append(math.pow(query_tf_idf[1], 2))
+    for sentence_tf_idf in sentence_tf_idfs:
+        sentence_results.append(math.pow(sentence_tf_idf[1], 2))
+    query_sum = sum(query_results)
+    sentence_sum = sum(sentence_results)
+    final_result = query_sum * sentence_sum
+    return final_result
 
 
 if __name__ == "__main__":
