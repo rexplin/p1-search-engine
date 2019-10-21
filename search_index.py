@@ -35,29 +35,32 @@ def search_index(term):
 
     # Iterate through each index we have, and look for any documents for the term
     # potential_docs = list()
-
+#    with open("hashTFIDFPickleFinal", "rb") as index_file:
+#        current_index = pickle.load(index_file)
     for token in search_tokens:
         potential_docs = list()
         for num in range(1, 9):
             with open(f"hashTFIDFPickle{num}", "rb") as index_file:
                 current_index = pickle.load(index_file)
-                potential_docs.extend(current_index.get(token, []))
+                potential_docs.extend(current_index.get(token))
 
         token_docs.append(potential_docs)
-
+#        token_docs.append(current_index.get(token))
+    current_index.clear()
     token_docs.sort(key=len)
 
     if len(search_tokens) > 1:
         def compare(item):
-            return item.split(":")[0] in [doc_id.split(":")[0] for doc_id in shortest]
+            return item.split(":")[0] in shortest_doc_ids
 
         shortest = token_docs[0]
-        # shortest_doc_ids = [doc_id.split(":")[0] for doc_id in shortest]
-
-        for token_doc in token_docs[1:]:
-            matches = list(filter(compare, token_doc))
-            if len(matches) > 0:
-                shortest = matches
+        shortest_doc_ids = [doc_id.split(":")[0] for doc_id in shortest]
+        if len(token_docs) > 1:
+            for token_doc in token_docs[1:]:
+                matches = list(filter(compare, token_doc))
+                if len(matches) > 0:
+                    shortest = matches
+                    shortest_doc_ids = [doc_id.split(":")[0] for doc_id in shortest]
         # final_documents = shortest
     else:
         for token_doc in token_docs:
