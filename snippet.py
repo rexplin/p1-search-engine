@@ -67,10 +67,10 @@ def get_snippet(doc_id, query_terms):
                         similarities.append((sentence, cosine))
                 # sorts the list by the cosine similarity value in descending order
                 similarities.sort(key=lambda tup: tup[1], reverse=True)
-                print(similarities)
+                # print(similarities)
                 top_two = similarities[:2]
-                for item in top_two:
-                    snippet += item[0] + "\n"
+                snippet = f"{snippet}\n\t{top_two[0]}\n\t{top_two[1]}\n\n"
+
                 return snippet
 
 
