@@ -70,10 +70,9 @@ def tf(values):
 
 def idf(n, nw):
     idf_vals = list()
-    for item in nw.items():
-        temp_idf = math.log2(n / item[1])
-        temp = (item[0], temp_idf)
-        idf_vals.append(temp)
+    for term, value in nw.items():
+        temp_idf = math.log2(n / value)
+        idf_vals.append((term, temp_idf))
 
     return idf_vals
 
