@@ -32,18 +32,34 @@ def search_index(term):
     search_tokens = pre_process_query(term)
 
     # Iterate through each index we have, and look for any documents for the term
-    for num in range(1, 9):
-        with open(f"hashTFIDFPickle{num}", "rb") as index_file:
-            current_index = pickle.load(index_file)
-            for token in search_tokens:
-                potential_docs = current_index.get(token, None)
-                if potential_docs:
-                    token_docs.append(potential_docs)
+    for token in search_tokens:
+        potential_docs = list()
+        for num in range(1, 9):
+            with open(f"hashTFIDFPickle{num}", "rb") as index_file:
+                current_index = pickle.load(index_file)
+                potential_docs.extend(current_index.get(token, []))
+
+        token_docs.append(potential_docs)
 
     token_docs.sort(key=len)
 
-    shortest = token_docs[0]
-    remaining = token_docs[1:]
+    if len(search_tokens) > 1:
+        def compare(item):
+            return item.split(":")[0] in shortest_doc_ids
+
+        shortest = token_docs[0]
+        shortest_doc_ids = [doc_id.split(":")[0] for doc_id in shortest]
+
+        for token_doc in token_docs:
+            matches = list(filter(compare, token_doc))
+            if len(matches) > 0:
+                final_documents.extend(matches)
+
+    else:
+        for token_doc in token_docs:
+            final_documents.extend(token_doc)
+
+    return sorted(final_documents, key=lambda x: x.split(":")[1], reverse=True)
 
 
 def retrieve_originals(related_documents):
@@ -56,7 +72,7 @@ def retrieve_originals(related_documents):
     document_titles = list()
 
     # Right now only finds 10 documents
-    retrieval_list = related_documents[:10]
+    retrieval_list = [doc.split(":")[0] for doc in related_documents[:20]]
 
     print("Building titles list...")
     for related_doc in retrieval_list:
@@ -73,5 +89,5 @@ if __name__ == "__main__":
     search_term = input("Give me a term: ")
     documents = search_index(search_term)
     titles = retrieve_originals(documents)
-    print(f"Found {len(documents)} related documents:\n\n")
-    print(titles)
+    # print(f"Found {len(documents)} related documents:\n\n")
+    # print(sorted([int(document.split(":")[0]) for document in documents]))
