@@ -38,7 +38,7 @@ def search_index(term):
     for token in search_tokens:
         potential_docs = list()
         for num in range(1, 9):
-            with open(f"hasjed-tfidf/hashTFIDFPickle{num}", "rb") as index_file:
+            with open(f"hashed-tfidf/hashTFIDFPickle{num}", "rb") as index_file:
                 current_index = pickle.load(index_file)
                 potential_docs.extend(current_index.get(token))
 
