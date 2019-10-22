@@ -20,11 +20,7 @@ def get_snippet(doc_id, query_terms):
     :return: title of document and two sentence snippet
     """
     query_terms = pre_process_query(query_terms)
-    # with open("wikipedia_data_lines.json", "r") as f:
-    if int(doc_id) < 1404076:
-        filename = f"../../CS437/data/document_{doc_id}.json"
-    else:
-        filename = f"../../CS437/data7/document_{doc_id}.json"
+    filename = f"../wiki-files-separated/file{int(doc_id/200000)+1}/wiki-doc-{doc_id}.json"
     with open(filename, "r") as original_doc:
         document = json.load(original_doc)
     # for entry in f:

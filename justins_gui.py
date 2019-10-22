@@ -227,7 +227,7 @@ if __name__ == "__main__":
         sessions[columns[1]].append({"sid": columns[0], "time": columns[2]})
         querylog_data.append(columns[1])
     print("loading GUI")
-    with open("hashTFIDFPickleFinal", "rb") as index_file:
+    with open("hashed-tfidf/hashTFIDFPickleFinal", "rb") as index_file:
         current_index = pickle.load(index_file)
     root = tk.Tk()
     root.geometry("1920x1080")
