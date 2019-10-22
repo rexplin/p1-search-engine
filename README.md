@@ -1,5 +1,7 @@
 # p1-search-engine
 ## How to Create
+The gui for this project uses tkinter, make sure the environment is set up properly for tkinter
+
 1. Download the wikipedia 1.6 million file collection wikipedia_text_files.json from https://drive.google.com/file/d/1T_HFDEB2vGCZDyKrKNZYEKZJTnAHASgp/view?usp=sharing. 
 2. Then run formatWikiFile.py to turn this into a json lines file, wikipedia_data_lines.json.
 3. Then run hashIndex.py to generate the index in 8 pickle files. Move into the hashed-index directory.
