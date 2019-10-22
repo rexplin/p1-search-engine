@@ -1,6 +1,5 @@
 import pickle
 import nltk
-import json
 from hashIndex import is_ascii
 from fullStopWordList import stopwords as stop_words
 
@@ -26,7 +25,7 @@ def search_index(term):
 
     # Set up storage variables
     token_docs = list()
-    final_documents = list()
+    current_index = None
     shortest = list()
     final_final_documents = dict()
 
@@ -34,7 +33,6 @@ def search_index(term):
     search_tokens = pre_process_query(term)
 
     # Iterate through each index we have, and look for any documents for the term
-    potential_docs = list()
     for token in search_tokens:
         potential_docs = list()
         for num in range(1, 9):
@@ -43,7 +41,8 @@ def search_index(term):
                 potential_docs.extend(current_index.get(token))
 
         token_docs.append(potential_docs)
-    current_index.clear()
+    if current_index:
+        current_index.clear()
     token_docs.sort(key=len)
 
     if len(search_tokens) > 1:
@@ -73,35 +72,7 @@ def search_index(term):
     return sorted(list(final_final_documents.values()), key=lambda x: x.split(":")[1], reverse=True)
 
 
-def retrieve_originals(related_documents):
-    """
-        Grabs the titles of the related documents to be returned
-
-    :param related_documents: List of document ids retrieved from the index
-    :return: List of document titles to be displayed for the user
-    """
-    document_titles = list()
-
-    # Right now only finds 10 documents
-    retrieval_list = [doc.split(":")[0] for doc in related_documents[:20]]
-    print(retrieval_list)
-    print("Building titles list...")
-    for related_doc in retrieval_list:
-        # TODO Change to final pathway that's self contained to project structure
-        if int(related_doc) < 1404076:
-            filename = f"../../CS437/data/document_{related_doc}.json"
-        else:
-            filename = f"../../CS437/data7/document_{related_doc}.json"
-        with open(filename, "r") as original_doc:
-            document = json.load(original_doc)
-            document_titles.append(document["title"])
-
-    return document_titles
-
-
 if __name__ == "__main__":
     search_term = input("Give me a term: ")
     documents = search_index(search_term)
-    titles = retrieve_originals(documents)
     print(f"Found {len(documents)} related documents:\n\n")
-    # print(sorted([int(document.split(":")[0]) for document in documents]))
