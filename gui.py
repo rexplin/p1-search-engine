@@ -166,28 +166,6 @@ def on_select(event):
     entry.insert(0, result)
 
 
-def get_originals(related_documents):
-    """
-        Grabs the titles of the related documents to be returned
-
-    :param related_documents: List of document ids retrieved from the index
-    :return: List of document titles to be displayed for the user
-    """
-    document_titles = list()
-
-    # Right now only finds 10 documents
-    retrieval_list = related_documents[:10]
-
-    for related_doc in retrieval_list:
-        # TODO Change to final pathway that's self contained to project structure
-        filename = f"../wiki-files-separated/output/wiki-doc-{related_doc}.json"
-        with open(filename, "r") as original_doc:
-            document = json.load(original_doc)
-            document_titles.append(document["title"])
-
-    return document_titles
-
-
 # This is no longer used, it's simply left here to demonstrate what I did to find the value in the comment
 def max_session_length(data):
     """
