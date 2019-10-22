@@ -1,0 +1,3 @@
+This is the hashed index of the wikipedia_data_lines.json articles. The files are too big for git, so the gitignore ignores everything except itself and this README.
+
+DO NOT PUSH ANY FILES IN THIS DIRECTORY TO GIT.
