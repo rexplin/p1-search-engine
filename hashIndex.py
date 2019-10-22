@@ -7,7 +7,6 @@ import hashedindex
 
 
 def write_index(index, document):
-
     stemmer = nltk.stem.snowball.EnglishStemmer()
     tokens = nltk.word_tokenize(f"{document['title']} {document['content']}")
     ascii_tokens = [ascii_token for ascii_token in tokens if is_ascii(ascii_token)]
@@ -39,10 +38,6 @@ if __name__ == "__main__":
         for entry in f:
             sys.stdout.write(f"{count}    \r")
             sys.stdout.flush()
-            # if count == 1000:
-            #     pickle.dump(index, open("hashIndexPickleTest", "wb"))
-            #     index.clear()
-            #     break
             if count == 200000:
                 pickle.dump(index, open("hashIndexPickle1", "wb"))
                 index.clear()
@@ -68,4 +63,3 @@ if __name__ == "__main__":
             count += 1
         pickle.dump(index, open("hashIndexPickle8", "wb"))
         index.clear()
-
