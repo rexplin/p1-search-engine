@@ -5,7 +5,6 @@ from datetime import timedelta
 from dateutil import parser
 from search_index import search_index
 from snippet import get_snippet
-import json
 
 
 def most_frequent(query_log):
