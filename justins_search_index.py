@@ -3,6 +3,10 @@ import json
 from hashIndex import is_ascii
 from fullStopWordList import stopwords as stop_words
 
+"""
+    ONLY RUN IF HARDWARE IS GREATER THAN 27GB!!!!!
+"""
+
 
 def pre_process_query(query):
     stemmer = nltk.stem.snowball.EnglishStemmer()

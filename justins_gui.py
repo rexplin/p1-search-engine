@@ -8,6 +8,10 @@ from justins_search_index import search_index
 from snippet import get_snippet
 import json
 
+"""
+    ONLY RUN IF HARDWARE IS GREATER THAN 27GB!!!!!
+"""
+
 
 def most_frequent(query_log):
     """
