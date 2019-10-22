@@ -229,8 +229,8 @@ if __name__ == "__main__":
 
     status_message = tk.StringVar()
     display_message("What are you looking for?")
-    status_label = tk.Label(root, textvariable=status_message, font="Times 12 italic", fg="black", height=1, width=75,
-                            padx=10, pady=10)
+    status_label = tk.Label(root, textvariable=status_message, font="Times 18 bold italic", fg="black", height=1,
+                            width=75, padx=10, pady=10)
     status_label.grid(row=1, column=1, sticky="W")
 
     label = tk.Label(root, text="Query:", font="Times 14 bold", fg="black", height=1, width=8)
