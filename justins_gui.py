@@ -103,7 +103,7 @@ def on_space(event):
                     break
 
         # Returns the 10 suggestions with highest scores of the 1000 found
-        data = [f"{suggestion} ({score})" for suggestion, score in suggestions.items()][:10]
+        data = [f"{suggestion} ({score})" for score, suggestion in suggestions.items()][:10]
 
     # update data in listbox
     listbox_update(data)
