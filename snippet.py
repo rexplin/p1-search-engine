@@ -17,14 +17,13 @@ def get_snippet(doc_id, query_terms, relevance_score):
 
     :param doc_id: id of the document the snippet will come from
     :param query_terms: the terms used to create the snippet
+    :param relevance_score: the relevance of the document in relation to query
     :return: title of document and two sentence snippet
     """
     query_terms = pre_process_query(query_terms)
-    filename = f"../wiki-files-separated/file{int(doc_id/200000)+1}/wiki-doc-{doc_id}.json"
+    filename = f"../wiki-files-separated/file{int(doc_id / 200000) + 1}/wiki-doc-{doc_id}.json"
     with open(filename, "r") as original_doc:
         document = json.load(original_doc)
-    # for entry in f:
-        # document = simplejson.loads(entry)
     # finds the document with the correct id
     if document["id"] == doc_id:
         snippet = f"{doc_id}:\t{document['title']} ({relevance_score})\n"
@@ -90,15 +89,15 @@ def tf(values, qt=None):
     if not occurrence_count - Counter() == Counter():
         max_d = occurrence_count.most_common(1)[0][1]
 
-    for item, count in occurrence_count.items():
-        count /= max_d
-        if qt:
-            if item in qt:
-                tf_vals.append((item, count))
+        for item, count in occurrence_count.items():
+            count /= max_d
+            if qt:
+                if item in qt:
+                    tf_vals.append((item, count))
+                else:
+                    continue
             else:
-                continue
-        else:
-            tf_vals.append((item, count))
+                tf_vals.append((item, count))
 
     return tf_vals
 
@@ -182,14 +181,22 @@ def denominator(sentence_tf_idfs, query_tf_idfs):
 
 
 def cosine_similarity(numer, denom):
+    """
+    Calculates the cosine similarity
+    cosine(d,q) = (Σ d * q)/( Σ d^2 *  Σ q^2)
+    :param numer: numerator of cosine similarity equation
+    :param denom: denominator of cosine similarity equation
+    :return: cosine similarity value
+    """
     result = numer / denom if denom > 0 else 1
     return result
 
 
 if __name__ == "__main__":
-    query = ['adolf', 'swedish', 'model', 'architect']
+    # queries and doc id's to test that the snippet is being generated correctly
+    query = "Adolf the Swedish Model architect"
+    query2 = "Anthony United States Post Office"
     doc = 35
-    query2 = ['anthoni', 'unit', 'state', 'post', 'offic']
     doc1 = 333467
     doc2 = 204409
     doc3 = 863570
@@ -200,14 +207,14 @@ if __name__ == "__main__":
     doc8 = 282272
     doc9 = 1069218
     doc10 = 275269
-    # print(get_snippet(doc, query))
-    print(get_snippet(doc1, query2))
-    print(get_snippet(doc2, query2))
-    print(get_snippet(doc3, query2))
-    print(get_snippet(doc4, query2))
-    print(get_snippet(doc5, query2))
-    print(get_snippet(doc6, query2))
-    print(get_snippet(doc7, query2))
-    print(get_snippet(doc8, query2))
-    print(get_snippet(doc9, query2))
-    print(get_snippet(doc10, query2))
+    print(get_snippet(doc, query, 1))
+    print(get_snippet(doc1, query2, 1))
+    print(get_snippet(doc2, query2, 1))
+    print(get_snippet(doc3, query2, 1))
+    print(get_snippet(doc4, query2, 1))
+    print(get_snippet(doc5, query2, 1))
+    print(get_snippet(doc6, query2, 1))
+    print(get_snippet(doc7, query2, 1))
+    print(get_snippet(doc8, query2, 1))
+    print(get_snippet(doc9, query2, 1))
+    print(get_snippet(doc10, query2, 1))
