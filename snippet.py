@@ -5,7 +5,7 @@ import math
 import json
 
 
-def get_snippet(doc_id, query_terms):
+def get_snippet(doc_id, query_terms, relevance_score):
     """
     Gets the snippet of from the document matching the passed in doc id
     it generates the snippet based on the provided query terms
@@ -27,8 +27,7 @@ def get_snippet(doc_id, query_terms):
         # document = simplejson.loads(entry)
     # finds the document with the correct id
     if document["id"] == doc_id:
-        snippet = document["title"] + "\n"
-        snippet.join("\n")
+        snippet = f"{doc_id}:\t{document['title']} ({relevance_score})\n"
         # tokenizes the content of the document by sentences
         sentences = nltk.sent_tokenize(f"{document['content']}")
         num_sentences = 0

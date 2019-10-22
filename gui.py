@@ -99,7 +99,7 @@ def on_space(event):
                     break
 
         # Returns the 10 suggestions with highest scores of the 1000 found
-        data = list(suggestions.values())[:10]
+        data = [f"{suggestion} ({score})" for suggestion, score in suggestions.items()][:10]
 
     # update data in listbox
     listbox_update(data)
@@ -122,12 +122,12 @@ def on_return(event):
 
     # Begin the search for the query
     related_documents = search_index(result)
-    candidate_doc_ids = (related_doc.split(":")[0] for related_doc in related_documents[:20])
+    candidate_doc_ids = (related_doc.split(":") for related_doc in related_documents[:20])
 
     # Retrieve snippets for Top 20
     snippets = list()
     for candidate_id in candidate_doc_ids:
-        snippet = get_snippet(int(candidate_id), result)
+        snippet = get_snippet(int(candidate_id[0]), result, candidate_id[1])
         snippets.append(snippet)
 
     # Update status one more time
