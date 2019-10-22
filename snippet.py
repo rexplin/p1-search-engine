@@ -1,9 +1,8 @@
 import nltk
-import simplejson
-from fullStopWordList import stopwords as stop_words
 from collections import Counter
 from search_index import pre_process_query
 import math
+import json
 
 
 def get_snippet(doc_id, query_terms):
@@ -20,58 +19,66 @@ def get_snippet(doc_id, query_terms):
     :param query_terms: the terms used to create the snippet
     :return: title of document and two sentence snippet
     """
+    query_terms = pre_process_query(query_terms)
+    # with open("wikipedia_data_lines.json", "r") as f:
+    if int(doc_id) < 1404076:
+        filename = f"../../CS437/data/document_{doc_id}.json"
+    else:
+        filename = f"../../CS437/data7/document_{doc_id}.json"
+    with open(filename, "r") as original_doc:
+        document = json.load(original_doc)
+    # for entry in f:
+        # document = simplejson.loads(entry)
+    # finds the document with the correct id
+    if document["id"] == doc_id:
+        snippet = document["title"] + "\n"
+        snippet.join("\n")
+        # tokenizes the content of the document by sentences
+        sentences = nltk.sent_tokenize(f"{document['content']}")
+        num_sentences = 0
 
-    with open("wikipedia_data_lines.json", "r") as f:
-        for entry in f:
-            document = simplejson.loads(entry)
-            # finds the document with the correct id
-            if document["id"] == doc_id:
-                snippet = document["title"] + "\n"
-                snippet.join("\n")
-                # tokenizes the content of the document by sentences
-                sentences = nltk.sent_tokenize(f"{document['content']}")
-                num_sentences = 0
-
-                # find how many sentences each query term is in. This value is used to calculate the
-                # idf. Also find the number of sentences in the document
-                query_term_dict = {}
-                for term in query_terms:
-                    for sentence in sentences:
-                        num_sentences += 1
-                        processed_tokens = pre_process_query(sentence)
-                        if term in processed_tokens:
-                            if term in query_term_dict:
-                                query_term_dict[term] += 1
-                            else:
-                                query_term_dict[term] = 1
-                num_query_terms = len(query_term_dict)
-                num_sentences /= num_query_terms if num_query_terms > 0 else 1
-                # calculates for the query
-                query_tfs = tf(query_terms)
-                query_idfs = idf(num_sentences, query_term_dict)
-                query_tf_idfs = tf_idf(query_tfs, query_idfs)
-
-                similarities = list()
-                # calculates for each sentence
-                for sentence in sentences:
-                    processed_tokens = pre_process_query(sentence)
-                    sentence_tfs = tf(processed_tokens, qt=query_terms)
-                    sentence_idfs = idf(num_sentences, query_term_dict)
-                    if len(sentence_tfs) == 0:
-                        continue
+        # find how many sentences each query term is in. This value is used to calculate the
+        # idf. Also find the number of sentences in the document
+        query_term_dict = {}
+        for term in query_terms:
+            for sentence in sentences:
+                num_sentences += 1
+                processed_tokens = pre_process_query(sentence)
+                if term in processed_tokens:
+                    if term in query_term_dict:
+                        query_term_dict[term] += 1
                     else:
-                        sentence_tf_idfs = tf_idf(sentence_tfs, sentence_idfs)
-                        numer = numerator(sentence_tf_idfs, query_tf_idfs)
-                        denom = denominator(sentence_tf_idfs, query_tf_idfs)
-                        cosine = cosine_similarity(numer, denom)
-                        similarities.append((sentence, cosine))
-                # sorts the list by the cosine similarity value in descending order
-                similarities.sort(key=lambda tup: tup[1], reverse=True)
-                # print(similarities)
-                top_two = similarities[:2]
-                snippet = f"{snippet}\n\t{top_two[0]}\n\t{top_two[1]}\n\n"
+                        query_term_dict[term] = 1
+        num_query_terms = len(query_term_dict)
+        num_sentences /= num_query_terms if num_query_terms > 0 else 1
+        # calculates for the query
+        query_tfs = tf(query_terms)
+        query_idfs = idf(num_sentences, query_term_dict)
+        query_tf_idfs = tf_idf(query_tfs, query_idfs)
 
-                return snippet
+        similarities = list()
+        # calculates for each sentence
+        for sentence in sentences:
+            processed_tokens = pre_process_query(sentence)
+            sentence_tfs = tf(processed_tokens, qt=query_terms)
+            sentence_idfs = idf(num_sentences, query_term_dict)
+            if len(sentence_tfs) == 0:
+                continue
+            else:
+                sentence_tf_idfs = tf_idf(sentence_tfs, sentence_idfs)
+                numer = numerator(sentence_tf_idfs, query_tf_idfs)
+                denom = denominator(sentence_tf_idfs, query_tf_idfs)
+                cosine = cosine_similarity(numer, denom)
+                similarities.append((sentence, cosine))
+                # sorts the list by the cosine similarity value in descending order
+        similarities.sort(key=lambda tup: tup[1], reverse=True)
+        top_two = similarities[:2]
+        if len(top_two) == 2:
+            snippet = f"{snippet}\n\t{top_two[0][0]}\n\t{top_two[1][0]}\n\n"
+        elif len(top_two) == 1:
+            snippet = f"{snippet}\n\t{top_two[0][0]}\n\n"
+
+        return snippet
 
 
 def tf(values, qt=None):
@@ -85,7 +92,8 @@ def tf(values, qt=None):
     """
     tf_vals = list()
     occurrence_count = Counter(values)
-    max_d = occurrence_count.most_common(1)[0][1]
+    if not occurrence_count - Counter() == Counter():
+        max_d = occurrence_count.most_common(1)[0][1]
 
     for item, count in occurrence_count.items():
         count /= max_d
@@ -179,7 +187,7 @@ def denominator(sentence_tf_idfs, query_tf_idfs):
 
 
 def cosine_similarity(numer, denom):
-    result = numer / denom
+    result = numer / denom if denom > 0 else 1
     return result
 
 
@@ -187,8 +195,24 @@ if __name__ == "__main__":
     query = ['adolf', 'swedish', 'model', 'architect']
     doc = 35
     query2 = ['anthoni', 'unit', 'state', 'post', 'offic']
-    doc2 = 20075
-    doc3 = 1660406
-    print(get_snippet(doc, query))
+    doc1 = 333467
+    doc2 = 204409
+    doc3 = 863570
+    doc4 = 855044
+    doc5 = 376121
+    doc6 = 71736
+    doc7 = 249810
+    doc8 = 282272
+    doc9 = 1069218
+    doc10 = 275269
+    # print(get_snippet(doc, query))
+    print(get_snippet(doc1, query2))
     print(get_snippet(doc2, query2))
     print(get_snippet(doc3, query2))
+    print(get_snippet(doc4, query2))
+    print(get_snippet(doc5, query2))
+    print(get_snippet(doc6, query2))
+    print(get_snippet(doc7, query2))
+    print(get_snippet(doc8, query2))
+    print(get_snippet(doc9, query2))
+    print(get_snippet(doc10, query2))
