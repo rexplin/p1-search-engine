@@ -1,0 +1,5 @@
+# Ignore everything in this directory
+Clean-Data.txt
+# Except this file
+!.gitignore
+!README

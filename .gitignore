@@ -1,2 +1,9 @@
 wikipedia_text_files.csv
 wikipedia_text_files.json
+.idea/
+__pycache__/
+bin/
+lib/
+pip-selfcheck.json
+test_data_lines.json
+wikipedia_data_lines.json
