@@ -1,4 +1,3 @@
-import pickle
 import nltk
 import json
 from hashIndex import is_ascii
@@ -16,7 +15,7 @@ def pre_process_query(query):
     return final_tokens
 
 
-def search_index(term):
+def search_index(term, current_index):
     """
     Load the index and look for documents related to a term
 
@@ -26,7 +25,6 @@ def search_index(term):
 
     # Set up storage variables
     token_docs = list()
-    final_documents = list()
     shortest = list()
     final_final_documents = dict()
 
@@ -34,16 +32,9 @@ def search_index(term):
     search_tokens = pre_process_query(term)
 
     # Iterate through each index we have, and look for any documents for the term
-    potential_docs = list()
     for token in search_tokens:
-        potential_docs = list()
-        for num in range(1, 9):
-            with open(f"hasjed-tfidf/hashTFIDFPickle{num}", "rb") as index_file:
-                current_index = pickle.load(index_file)
-                potential_docs.extend(current_index.get(token))
+        token_docs.append(current_index.get(token))
 
-        token_docs.append(potential_docs)
-    current_index.clear()
     token_docs.sort(key=len)
 
     if len(search_tokens) > 1:
@@ -82,7 +73,7 @@ def retrieve_originals(related_documents):
     """
     document_titles = list()
 
-    # Right now only finds 10 documents
+    # Right now only finds 20 documents
     retrieval_list = [doc.split(":")[0] for doc in related_documents[:20]]
     print(retrieval_list)
     print("Building titles list...")
