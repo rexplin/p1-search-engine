@@ -68,35 +68,7 @@ def search_index(term, current_index):
     return sorted(list(final_final_documents.values()), key=lambda x: x.split(":")[1], reverse=True)
 
 
-def retrieve_originals(related_documents):
-    """
-        Grabs the titles of the related documents to be returned
-
-    :param related_documents: List of document ids retrieved from the index
-    :return: List of document titles to be displayed for the user
-    """
-    document_titles = list()
-
-    # Right now only finds 20 documents
-    retrieval_list = [doc.split(":")[0] for doc in related_documents[:20]]
-    print(retrieval_list)
-    print("Building titles list...")
-    for related_doc in retrieval_list:
-        # TODO Change to final pathway that's self contained to project structure
-        if int(related_doc) < 1404076:
-            filename = f"../../CS437/data/document_{related_doc}.json"
-        else:
-            filename = f"../../CS437/data7/document_{related_doc}.json"
-        with open(filename, "r") as original_doc:
-            document = json.load(original_doc)
-            document_titles.append(document["title"])
-
-    return document_titles
-
-
 if __name__ == "__main__":
     search_term = input("Give me a term: ")
     documents = search_index(search_term)
-    titles = retrieve_originals(documents)
     print(f"Found {len(documents)} related documents:\n\n")
-    # print(sorted([int(document.split(":")[0]) for document in documents]))
