@@ -5,6 +5,8 @@ from datetime import timedelta
 from dateutil import parser
 from search_index import search_index
 from snippet import get_snippet
+from querylogs.load import load
+import re
 
 
 def most_frequent(query_log):
@@ -44,21 +46,14 @@ def query_score(candidate, query):
     # Calculate the Freq(CQ) value
 
     # max_q, max_q_count = most_frequent(querylog_data)
-    max_q_count = 83677  # Hardcoded because the above line takes a little bit to run
-    freq_cq = querylog_data.count(candidate) / max_q_count
+    # max_q_count = 83677  # Hardcoded because the above line takes a little bit to run
+    max_q_count = 34124
+    freq_cq = querylog.count(candidate) / max_q_count
 
-    q_sessions = set()
-    mod_sessions = 0
+    mod_sessions = 1
     min_diff = timedelta(0)
-    for q_occurs, c_occurs in zip(sessions[query], sessions[candidate]):
-        # This is used to determine the number of sessions that contain q'
-        q_sessions.add(q_occurs["sid"])
 
-        # Determine how many times q' turns into CQ
-        if q_occurs["sid"] == c_occurs["sid"] and parser.parse(c_occurs["time"]) > parser.parse(q_occurs["time"]):
-            mod_sessions += 1
-
-    total_sessions = len(q_sessions)
+    total_sessions = querylog.count(query)
     mod_cq_q_prime = mod_sessions / total_sessions if total_sessions > 0 else 1
 
     longest_session = 7946741000
@@ -84,18 +79,13 @@ def on_space(event):
     suggestions = SortedDict()
 
     # get data from test_list
-    count = 0
     if value == '':
         data = ""
     else:
-        for item in querylog_data:
-            if item.lower().startswith(value):
+        for item in querylog.queries().keys():
+            if re.search(r'^' + value + r'\b', item):
                 score = query_score(item, value)
                 suggestions[score] = item
-
-                count += 1
-                if count >= 1000:  # can use to decide how many results to show
-                    break
 
         # Returns the 10 suggestions with highest scores of the 1000 found
         data = [f"{suggestion} ({score})" for score, suggestion in suggestions.items()][:10]
@@ -160,10 +150,12 @@ def on_select(event):
     :param event:
     :return:
     """
-    result = event.widget.get(event.widget.curselection())
-    entry.delete(0, 'end')
-    entry.insert(0, result)
-
+    try:
+        result = event.widget.get(event.widget.curselection())
+        entry.delete(0, 'end')
+        entry.insert(0, result)
+    except tk.TclError:
+        return
 
 # This is no longer used, it's simply left here to demonstrate what I did to find the value in the comment
 def max_session_length(data):
@@ -190,15 +182,7 @@ def display_message(msg):
 
 
 if __name__ == "__main__":
-    with open('querylogs/Clean-Data.txt', 'r') as f:
-        filedata = f.readlines()
-
-    querylog_data = list()
-    sessions = defaultdict(list)
-    for line in filedata[1:]:
-        columns = line.split('\t')
-        sessions[columns[1]].append({"sid": columns[0], "time": columns[2]})
-        querylog_data.append(columns[1])
+    querylog = load("querylogs/Clean-Data.txt")
 
     root = tk.Tk()
     root.geometry("1920x1080")
