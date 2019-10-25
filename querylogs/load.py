@@ -40,17 +40,11 @@ class QueryLog(object):
 
 
 def load(filename):
-    # querylogs / Clean - Data.txt
     with open(filename, 'r') as f:
         filedata = f.readlines()
 
         iterable_data = filedata[1:]
-        # iterator = tqdm(iterable_data, total=len(iterable_data))
         query_log = QueryLog()
         query_log.process_log(iterable_data)
-
-        # columns = line.split('\t')
-        # sessions[columns[1]].append({"sid": columns[0], "time": columns[2]})
-        # querylog_data.append(columns[1])
 
         return query_log
