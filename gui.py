@@ -1,8 +1,7 @@
 import tkinter as tk
-from collections import defaultdict, Counter
+from collections import Counter
 from sortedcontainers import SortedDict
 from datetime import timedelta
-from dateutil import parser
 from search_index import search_index
 from snippet import get_snippet
 from querylogs.load import load
@@ -157,6 +156,7 @@ def on_select(event):
     except tk.TclError:
         return
 
+
 # This is no longer used, it's simply left here to demonstrate what I did to find the value in the comment
 def max_session_length(data):
     """
@@ -182,6 +182,7 @@ def display_message(msg):
 
 
 if __name__ == "__main__":
+    print("Loading query log.")
     querylog = load("querylogs/Clean-Data.txt")
 
     root = tk.Tk()

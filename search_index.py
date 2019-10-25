@@ -4,6 +4,15 @@ from hashIndex import is_ascii
 from fullStopWordList import stopwords as stop_words
 
 
+def center(win):
+    win.update_idletasks()
+    width = win.winfo_width()
+    height = win.winfo_height()
+    x = (win.winfo_screenwidth() // 2) - (width // 2)
+    y = (win.winfo_screenheight() // 2) - (height // 2)
+    win.geometry('{}x{}+{}+{}'.format(width, height, x, y))
+
+
 def pre_process_query(query):
     stemmer = nltk.stem.snowball.EnglishStemmer()
     tokens = nltk.word_tokenize(query)
@@ -51,24 +60,28 @@ def search_index(term):
 
         shortest = token_docs[0]
         shortest_doc_ids = [doc_id.split(":")[0] for doc_id in shortest]
+        
         if len(token_docs) > 1:
             for token_doc in token_docs[1:]:
                 matches = list(filter(compare, token_doc))
                 if len(matches) > 0:
                     shortest = matches
                     shortest_doc_ids = [doc_id.split(":")[0] for doc_id in shortest]
+            
     else:
         for token_doc in token_docs:
             shortest.extend(token_doc)
+
     for token_finalDoc in shortest:
-        splitArray = token_finalDoc.split(":")
-        splitID = splitArray[0]
-        splitTFIDF = float(splitArray[1])
-        if splitID in final_final_documents:
-            pastTFIDF = float(final_final_documents.get(splitID).split(":")[1])
-            final_final_documents.update({splitID: f"{splitID}:{((pastTFIDF + splitTFIDF) / len(search_tokens))}"})
+        split_array = token_finalDoc.split(":")
+        split_id = split_array[0]
+        split_tfidf = float(split_array[1])
+        if split_id in final_final_documents:
+            past_tfidf = float(final_final_documents.get(split_id).split(":")[1])
+            final_final_documents.update({split_id: f"{split_id}:{((past_tfidf + split_tfidf) / len(search_tokens))}"})
         else:
-            final_final_documents.update({splitID: f"{splitID}:{splitTFIDF}"})
+            final_final_documents.update({split_id: f"{split_id}:{split_tfidf}"})
+
     return sorted(list(final_final_documents.values()), key=lambda x: x.split(":")[1], reverse=True)
 
 
