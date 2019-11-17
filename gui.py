@@ -1,7 +1,7 @@
 import tkinter as tk
 from collections import Counter
 from sortedcontainers import SortedDict
-from datetime import timedelta
+from datetime import timedelta, datetime
 from search_index import search_index
 from snippet import get_snippet
 from querylogs.load import load
@@ -72,6 +72,7 @@ def on_space(event):
     :param event: space bar is pressed
     :return: None
     """
+    start = datetime.now()
     # get text from entry
     value = event.widget.get()
     value = value.strip().lower()
@@ -89,8 +90,15 @@ def on_space(event):
         # Returns the 10 suggestions with highest scores of the 1000 found
         data = [f"{suggestion} ({score})" for score, suggestion in suggestions.items()][:10]
 
+    stop = datetime.now()
+
+    # Reverse the list so the queries appear in correct order in suggestion box
+    data.reverse()
+
     # update data in listbox
     listbox_update(data)
+
+    print({"query": value, "tts": (stop - start).total_seconds()})
 
 
 def on_return(event):
